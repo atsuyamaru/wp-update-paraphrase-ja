@@ -7,42 +7,6 @@ def extract_obj_text(response_obj):
     response_obj_text = response_obj.choices[0].text.lstrip()
     return response_obj_text
 
-### 長い文章から一部分を抽出
-# 前半1/2を抽出
-def extract_former(paragraph):
-    """
-    Extract the first half part of the passed paragraph.
-    Return the strings as the extracted part.
-    """
-    first_end_index = len(paragraph)//2
-    extracted_former = paragraph[:first_end_index]
-    return extracted_former
-
-
-# 後半1/2を抽出
-def extract_latter(paragraph):
-    """
-    Extract the last of a thirds part of the passed paragraph.
-    Return the strings as the extracted part.
-    """
-    last_start_index = len(paragraph)//2
-    last_end_index = len(paragraph)
-    extracted_latter = paragraph[last_start_index:last_end_index]
-    return extracted_latter
-
-
-# 文章から中央部分1/3のみ抽出
-def extract_middle(paragraph):
-    """
-    Extract the middle part of the passed paragraph.
-    Return the strings as the extracted part.
-    """
-
-    middle_start_index = len(paragraph)//3
-    middle_end_index = len(paragraph)//3*2
-    extracted_middle = paragraph[middle_start_index:middle_end_index]
-    return extracted_middle
-
 
 ### GPTへの実行指示
 #  英語テキストをパラフレーズ
@@ -78,7 +42,7 @@ def write_continue(openai, text):
 
     response = openai.Completion.create(
         model="text-davinci-003",
-        prompt=f"Write the continue following comma text, with a polite tone but much more lively. Exclamation marks are often used. And not needed greetings and introduction. The word count is at least 1000 words. Be careful, usually the beginning and ending parts are missing some words. : {text}",
+        prompt=f"Write the continue text following the comma(:) text, with a polite tone but lively. Exclamation marks are often used. And not needed greetings and introduction. The output word count should be at least 400 words. :\n {text}",
         temperature=0.8,
         max_tokens=2000,
         stop=None,
@@ -100,7 +64,7 @@ def tone_consistent(openai, input_paragraph):
     """
     response = openai.Completion.create(
         model="text-davinci-003",
-        prompt=f"Make the end of Japanese expression following after the colon(:) to be consistent, the same level of politeness. But turn the tone into more lively, use exclamation mark sometimes. And make the content length double longer. The beginning and ending may miss some phrase. In that case, create or change its part to be sound more naturally. The Output also should be the Japanese.:\n{input_paragraph}",
+        prompt=f"Make the end of Japanese expression following after the colon(:) to be consistent, the same level of politeness. But turn the tone into more lively, use exclamation mark sometimes. And make the content length double longer. The beginning and ending may miss some phrase. In that case, create or change its part to be sound more naturally. The Output text also should be Japanese.:\n{input_paragraph}",
         temperature=0.9,
         max_tokens=2000,
         stop=None,
@@ -115,13 +79,13 @@ def tone_consistent(openai, input_paragraph):
 # HTMLで整形
 def format_html(openai, input_paragraph):
     """
-    Format the input paragraph as a HTML.
+    Format the input Japanese paragraph as a HTML.
     Pass the openai object as the 1st argument, pass the input text as the 2nd argument.
     Return the string text extracted from the openai response object.
     """
     response = openai.Completion.create(
         model="text-davinci-003",
-        prompt=f"Format the following Japanese text into HTML. You should wrap a group of sentence with <p> tag, and create original headings for each with <h2>.If you find any URLs, you should format those url with <a> tag and anchor text you create.: \n{input_paragraph}",
+        prompt=f"Format the following Japanese text into HTML. You should wrap a group of Japanese sentence with <p> tag, and create original Japanese headings for each with <h2>, sometimes <h3> depending on the context, following HTML markup rule. If you find any URLs, you should format those url with <a> tag and Japanese anchor text you create.: \n{input_paragraph}",
         temperature=0.9,
         max_tokens=2000,
         stop=None,
