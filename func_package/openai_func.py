@@ -76,17 +76,18 @@ def tone_consistent(openai, input_paragraph):
     return response_text
 
 
-# HTMLで整形
+# H2, H3を含むHTMLへ整形
 def format_html(openai, input_paragraph):
     """
     Format the input Japanese paragraph as a HTML.
     Pass the openai object as the 1st argument, pass the input text as the 2nd argument.
+    If your text contains URL, URL is formatted with <a> tag. And Refrain GPT from inserting imaginary URLs.
     Return the string text extracted from the openai response object.
     """
     response = openai.Completion.create(
         model="text-davinci-003",
-        prompt=f"Format the following Japanese text into HTML. You should wrap a group of Japanese sentence with <p> tag, and create original Japanese headings for each with <h2>, sometimes <h3> depending on the context, following HTML markup rule. If you find any URLs, you should format those url with <a> tag and Japanese anchor text you create.: \n{input_paragraph}",
-        temperature=0.9,
+        prompt=f"Format the following Japanese text into HTML. You should wrap a group of Japanese sentence with <p> tag, and create original Japanese headings for each with <h2>, sometimes <h3> depending on the context, following HTML markup rule. Do NOT change the content body (including URL) itself. And DO NOT insert <a> tag with imaginary URL, like 'example.com'.:\n{input_paragraph}",    
+        temperature=0.6,
         max_tokens=2000,
         stop=None,
         top_p=1,

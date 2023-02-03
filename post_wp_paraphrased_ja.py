@@ -9,7 +9,7 @@ import deepl
 import openai
 
 from func_package.deepl_func import translate_2en, translate_2ja
-from func_package.extract_text import extract_former_half, extract_latter_half, extract_first_thirds, extract_middle_thirds, extract_last_thirds
+from func_package.extract_text import extract_latter_half, extract_first_thirds, extract_middle_thirds, extract_last_thirds
 from func_package.openai_func import paraphrase_en, format_html, write_continue, paraphrase_title
 from func_package.wp_api_func import update_with_html
 
@@ -26,6 +26,7 @@ with open('wp_login_info.json', 'r') as f:
     wp_login_info = json.load(f)
 username = wp_login_info['username']
 password = wp_login_info['password']
+wp_root_url = wp_login_info['wp_root_url']
 
 
 ### パラフレーズされたテキストの作成
@@ -34,7 +35,9 @@ with open('./wp-post-ids.txt') as f:
     post_ids = f.read()
 post_ids_list = post_ids.split(' ')
 
+# パラフレーズ〜WordPressへの更新を全記事に対して実行
 for post_id in post_ids_list:
+
     # DeepLで日本語から英語に翻訳
     with open(f'original_ja_contents/{post_id}') as f:
         content_text = f.read()
@@ -63,33 +66,48 @@ for post_id in post_ids_list:
     time.sleep(3)
     retranslated_ja_3 = translate_2ja(translator, paraphrased_text_3)
     time.sleep(3)
-    retranslated_ja_4 = translate_2ja(translator, continue_text)
+    if len(continue_text) > 20:
+        retranslated_ja_4 = translate_2ja(translator, continue_text)
 
-    # それぞれを2分割し、OpenAIでHTML形式のテキストへフォーマット
-    response_html_1 = format_html(openai, extract_former_half(retranslated_ja_1))
+    # それぞれを3分割し、OpenAIでHTML形式のテキストへフォーマット
+    response_html_1 = format_html(openai, extract_first_thirds(retranslated_ja_1))
     time.sleep(4)
-    response_html_2 = format_html(openai, extract_latter_half(retranslated_ja_1))
+    response_html_2 = format_html(openai, extract_middle_thirds(retranslated_ja_1))
     time.sleep(4)
-
-    response_html_3 = format_html(openai, extract_former_half(retranslated_ja_2))
-    time.sleep(4)
-    response_html_4 = format_html(openai, extract_latter_half(retranslated_ja_2))
+    response_html_3 = format_html(openai, extract_last_thirds(retranslated_ja_1))
     time.sleep(4)
 
-    response_html_5 = format_html(openai, extract_former_half(retranslated_ja_3))
+    response_html_4 = format_html(openai, extract_first_thirds(retranslated_ja_2))
     time.sleep(4)
-    response_html_6 = format_html(openai, extract_latter_half(retranslated_ja_3))
+    response_html_5 = format_html(openai, extract_middle_thirds(retranslated_ja_2))
     time.sleep(4)
-
-    response_html_7 = format_html(openai, extract_former_half(retranslated_ja_4))
-    time.sleep(4)
-    response_html_8 = format_html(openai, extract_latter_half(retranslated_ja_4))
+    response_html_6 = format_html(openai, extract_last_thirds(retranslated_ja_2))
     time.sleep(4)
 
-    response_html_whole = response_html_1 + '<br>' + response_html_2 + '<br>' + \
-        response_html_3 + '<br>' + response_html_4 + '<br>' + \
-        response_html_5 + '<br>' + response_html_6 + '<br>' + \
-        response_html_7 + '<br>' + response_html_8 + '<br>'
+    response_html_7 = format_html(openai, extract_first_thirds(retranslated_ja_3))
+    time.sleep(4)
+    response_html_8 = format_html(openai, extract_middle_thirds(retranslated_ja_3))
+    time.sleep(4)
+    response_html_9 = format_html(openai, extract_last_thirds(retranslated_ja_3))
+
+    if retranslated_ja_4:
+        time.sleep(4)
+        response_html_10 = format_html(openai, extract_first_thirds(retranslated_ja_4))
+        time.sleep(4)
+        response_html_11 = format_html(openai, extract_middle_thirds(retranslated_ja_4))
+        time.sleep(4)
+        response_html_12 = format_html(openai, extract_last_thirds(retranslated_ja_4))
+
+    # 生成されたHTMLテキストをすべて連結
+    if retranslated_ja_4:
+        response_html_whole = response_html_1 + '<br>' + response_html_2 + '<br>' + response_html_3 + '<br>' + \
+            response_html_4 + '<br>' + response_html_5 + '<br>' + response_html_6 + '<br>' + \
+            response_html_7 + '<br>' + response_html_8 + '<br>' + response_html_9 + '<br>' + \
+            response_html_10 + '<br>' + response_html_11 + '<br>' + response_html_12
+    else:
+        response_html_whole = response_html_1 + '<br>' + response_html_2 + '<br>' + response_html_3 + '<br>' + \
+            response_html_4 + '<br>' + response_html_5 + '<br>' + response_html_6 + '<br>' + \
+            response_html_7 + '<br>' + response_html_8 + '<br>' + response_html_9
 
     # OpenAIでオリジナル日本語タイトルからタイトルを生成
     with open(f'./original_ja_title/{post_id}') as f:
@@ -99,16 +117,15 @@ for post_id in post_ids_list:
 
     ### WordPressへのUpdateを実行
     # エンドポイントを定義
-    base_url = "https://livernet.jp/wp-json/wp/v2/posts"
-    update_url = f"{base_url}/{post_id}"
+    api_update_url = f"{wp_root_url}/wp-json/wp/v2/posts/{post_id}"
 
-    ## Updateの実行
+    ## Updateの実行: 公開状態に
     json_html_body = {
         "title": title_created,
         "content": response_html_whole,
         "status": "publish"
     }
+    returned_post_obj = update_with_html(requests, api_update_url, username, password, json_html_body)
 
     # 実行結果を出力
-    returned_post_obj = update_with_html(requests, update_url, username, password, json_html_body)
-    print(f"Success! Post ID: {returned_post_obj['id']}; URL:{returned_post_obj['link']}\nTitle: {returned_post_obj['title']['rendered']}\n------")
+    print(f"Success! Post ID: {returned_post_obj['id']}; URL: {returned_post_obj['link']}\nTitle: {returned_post_obj['title']['rendered']}\n------")
