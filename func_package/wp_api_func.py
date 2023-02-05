@@ -2,6 +2,21 @@
 # class AccessError(Exception):
 #     print('API Access Failure.')
 
+def update_api_access(requests, target_url, username, password, json_body):
+    """
+    Execute WordPress PATCH API Access to update the post.
+    The URL should contain the post ID.
+    If success, return post JSON object.
+    If failure to access API, raise AccessError.
+    JSON body needs to be contained at least post title, content, status.
+    """
+    response = requests.post(target_url, auth=(username, password), json=json_body)
+    if response.status_code == 200:
+        post_dict = response.json()
+        return post_dict
+    else:
+        print (f'AccessError:{target_url}')
+
 
 def update_with_html(requests, target_url, username, password, json_html_body):
     """

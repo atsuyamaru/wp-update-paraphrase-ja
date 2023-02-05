@@ -162,3 +162,24 @@ def extract_keyword(openai, input_title):
     )
     response_text = extract_obj_text(response)
     return response_text
+
+
+def synonym_keyword(openai, input_title):
+    """
+    Create a synonyms list of the given keyword.
+    Pass the openai object as the 1st argument, pass the input paragraph as the 2nd argument.
+    Return the list of strings, that are extracted from the openai response object.
+    """
+
+    response = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=f"Create a list of 10 synonyms of the below word. Return the list as a python list format. :\n{input_title}",
+        temperature=0.7,
+        max_tokens=2000,
+        stop=None,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0
+    )
+    response_words = extract_obj_text(response)
+    return response_words
