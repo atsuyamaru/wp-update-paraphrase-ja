@@ -35,9 +35,6 @@ with open('./wp-post-ids.txt') as f:
     post_ids = f.read()
 post_ids_list = post_ids.split(' ')
 
-# 途中から開始
-post_ids_list = post_ids_list[375:]
-
 # パラフレーズ〜WordPressへの更新を全記事に対して実行
 for post_id in post_ids_list:
 
