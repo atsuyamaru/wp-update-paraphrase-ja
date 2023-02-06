@@ -14,6 +14,10 @@ def check_result_is_0(response):
         else:
             return False
     else:
+        print(f"Response Code: {response.status_code}")
+        response_dict = response.json()
+        error_message = response_dict['message']
+        print(f"Error: {error_message}")
         raise Exception
 
 

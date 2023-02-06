@@ -141,19 +141,18 @@ def paraphrase_title(openai, input_paragraph):
     return response_text
 
 
-# 英文から代表キーワードを1つ抽出or生成
+# 英文から代表キーワードを1つ抽出
 def extract_keyword(openai, input_title):
     """
     Extract the special one keyword from the passed text.
-    If it is not found, GPT will create the keyword.
     Pass the openai object as the 1st argument, pass the input paragraph as the 2nd argument.
     Return the string text extracted from the openai response object.
     """
 
     response = openai.Completion.create(
         model="text-davinci-003",
-        prompt=f"Extract the one special keyword from the text below. If you cannot represent in the given text, you can generate one special word on your own.:\n{input_title}",
-        temperature=0.8,
+        prompt=f"Extract the single special keyword from the text below following colon(:). Prohibit from returning sentence or phrase format. Prohibit inserting new lines. Return a single word. \n:{input_title}",
+        temperature=0.5,
         max_tokens=2000,
         stop=None,
         top_p=1,
@@ -173,8 +172,8 @@ def synonym_keyword(openai, input_title):
 
     response = openai.Completion.create(
         model="text-davinci-003",
-        prompt=f"Create a list of 10 synonyms of the below word. Return the list as a python list format. :\n{input_title}",
-        temperature=0.7,
+        prompt=f"Create a list of 20 synonyms of the below word. Those each synonym should be a word, not a phrase. Each keyword in the list is separated comma(,) and half-space, the keyword wrapped by single-quotations('), and the list is wrapped by [] as a Python list, like ['word', 'word', 'word']. Prohibit from adding the numbering and new lines, like ['1. word\n2. word\n3. word']].  :\n{input_title}",
+        temperature=0.4,
         max_tokens=2000,
         stop=None,
         top_p=1,

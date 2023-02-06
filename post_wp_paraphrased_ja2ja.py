@@ -35,6 +35,9 @@ with open('./wp-post-ids.txt') as f:
     post_ids = f.read()
 post_ids_list = post_ids.split(' ')
 
+# 途中から開始（任意のリスト番号に変更）
+# post_ids_list = post_ids_list[10:]
+
 # パラフレーズ〜WordPressへの更新を全記事に対して実行
 for post_id in post_ids_list:
 
@@ -128,4 +131,4 @@ for post_id in post_ids_list:
     returned_post_obj = update_with_html(requests, api_update_url, username, password, json_html_body)
 
     # 実行結果を出力
-    print(f"Success! Post ID: {returned_post_obj['id']}; URL: {returned_post_obj['link']}\nTitle: {returned_post_obj['title']['rendered']}\n------")
+    print(f"Success! Post updated.\nPost ID: {returned_post_obj['id']}; URL: {returned_post_obj['link']}\nTitle: {returned_post_obj['title']['rendered']}\n------")
