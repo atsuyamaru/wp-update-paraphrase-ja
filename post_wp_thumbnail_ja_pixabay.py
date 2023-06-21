@@ -1,47 +1,51 @@
 import json
 import os
+
 import requests
 from PIL import Image
-
 import deepl
 import openai
 
 from func_package.deepl_func import translate_2en
-from func_package.pixabay_image import check_result_is_0, extract_image_url, search_pixabay
+from func_package.pixabay_image import (
+    check_result_is_0,
+    extract_image_url,
+    search_pixabay,
+)
 from func_package.openai_func import extract_keyword, synonym_keyword
 from func_package.wp_api_func import update_api_access
 
 ## 認証まわり
 # Pixabay
 pixabay_url = "https://pixabay.com/api/"
-pixabay_api_key = os.environ['PIXABAY_API_KEY']
+pixabay_api_key = os.environ["PIXABAY_API_KEY"]
 
 # DeepLの認証とtranslatorオブジェクトの生成
-deepl_api_key = os.environ['DEEPL_API_KEY']
+deepl_api_key = os.environ["DEEPL_API_KEY"]
 translator = deepl.Translator(deepl_api_key)
 
 # OPEN AIオブジェクトに認証キー情報をもたせる
-openai.api_key = os.environ['OPENAI_API_KEY']
+openai.api_key = os.environ["OPENAI_API_KEY"]
 
 # WordPressのログイン情報を読み込み
-with open('wp_login_info.json', 'r') as f:
+with open("wp_login_info.json", "r") as f:
     wp_login_info = json.load(f)
-username = wp_login_info['username']
-password = wp_login_info['password']
-wp_root_url = wp_login_info['wp_root_url']
+username = wp_login_info["username"]
+password = wp_login_info["password"]
+wp_root_url = wp_login_info["wp_root_url"]
 
 
 ## 日本語タイトルから英語キーワード抽出: DeepL&OpenAI
-with open('./wp-post-ids.txt') as f:
+with open("./wp-post-ids.txt") as f:
     post_ids = f.read()
-post_ids_list = post_ids.split(' ')
+post_ids_list = post_ids.split(" ")
 
 # 途中から開始（任意のリスト番号に変更）
 # post_ids_list = post_ids_list[10:]
 
 # 投稿IDをループで取得し実行
 for post_id in post_ids_list:
-    with open(f'./original_ja_title/{post_id}') as f:
+    with open(f"./original_ja_title/{post_id}") as f:
         original_title = f.read()
 
     # DeepLで翻訳を実行
@@ -49,7 +53,6 @@ for post_id in post_ids_list:
 
     # 代表キーワードを抽出: OpenAI
     keyword = extract_keyword(openai, en_title)
-
 
     ## 画像の検索・取得
     # Pixabay: キーワード検索
@@ -76,7 +79,6 @@ for post_id in post_ids_list:
     else:
         image_url = extract_image_url(response)
 
-
     ## 画像の保存・変換
     # 指定画像をバイナリ形式でローカルにDL
     response = requests.get(image_url)
@@ -92,31 +94,32 @@ for post_id in post_ids_list:
     # pngで保存
     rgb_image.save(f"./pixabay_images_png/{post_id}.png", format="PNG")
 
-
     ### WordPress投稿へ画像をアップロード
     ## メディアライブラリに画像をアップロード
     # png画像ファイルの読み込み
-    with open(f'./pixabay_images_png/{post_id}.png', 'rb') as f:
+    with open(f"./pixabay_images_png/{post_id}.png", "rb") as f:
         img_data = f.read()
 
     headers = {
         "Content-Disposition": f"attachment; filename={post_id}.png",
-        "Content-Type": "image/png"
+        "Content-Type": "image/png",
     }
 
     # メディアライブラリへのアップロード実行
     url_media = f"{wp_root_url}/wp-json/wp/v2/media"
-    media_response = requests.post(url_media, auth=(username, password),  headers=headers, data=img_data)
+    media_response = requests.post(
+        url_media, auth=(username, password), headers=headers, data=img_data
+    )
 
     ## アップロードしたファイルと投稿サムネイルを紐付け
     update_url = f"{wp_root_url}/wp-json/wp/v2/posts/{post_id}"
     media_dict = media_response.json()
-    post_data = {
-    "featured_media": media_dict['id']
-    }
+    post_data = {"featured_media": media_dict["id"]}
 
     # 紐付けの実行（update）
     post_dict = update_api_access(requests, update_url, username, password, post_data)
 
     # 実行結果を出力
-    print(f"Success! Thumbnail updated.\nPost ID: {post_dict['id']}; URL: {post_dict['link']}\nTitle: {post_dict['title']['rendered']}\n------")
+    print(
+        f"Success! Thumbnail updated.\nPost ID: {post_dict['id']}; URL: {post_dict['link']}\nTitle: {post_dict['title']['rendered']}\n------"
+    )
